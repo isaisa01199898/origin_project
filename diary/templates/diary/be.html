@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>test is 試験用</title>
+
+</head>
+<body >
+
+            <script>
+                const msg =new SpeechSynthesisUtterance();
+                msg.text = "「努力した者が全て報われるとは限らん。しかし！成功した者は皆努力しておる！"
+                msg.lang = 'ja';
+                msg.rate = 1;
+                msg.volume = 3;
+                speechSynthesis.speak(msg);
+            </script>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,11 @@
+#parent_flame {
+    height:100%;
+    position:relative;
+    border:1px solid #ccc;
+}
+
+#child_flame {
+    position: absolute;
+      bottom: 0px; /** 場合によっては微調整 **/
+      right: 0px;  /** 場合によっては微調整 **/
+}

@@ -1,0 +1,271 @@
+from datetime import datetime
+import csv
+from gaze_tracking import GazeTracking
+import cv2
+import dlib
+import threading
+import serial
+import sys
+now = datetime.now()
+time_now = now.strftime("%Y-%m-%d_%H-%M-%S")
+left_pupil_x =None
+left_pupil_y =None
+right_pupil_x=None
+right_pupil_y=None
+sensor_data=None
+i=3
+
+data = []
+
+csv_file=f"data\\{time_now}crearted.csv"
+
+with open(csv_file, "w", newline="", encoding="utf-8") as f:
+    writer = csv.writer(f)
+    f.truncate(0)  # ファイルを空にする
+    time_now = datetime.now()  # ←ここを修正！
+    print(time_now)
+    writer.writerow(['心拍数','左目のx座標','左目のy座標','右目のx座標','右目のy座標','nitizi'])
+
+
+
+
+detector = dlib.get_frontal_face_detector()
+path = 'C:\\Users\\isami\\OneDrive\\Desktop\\myproject\\shape_predictor_68_face_landmarks.dat'
+predictor = dlib.shape_predictor(path)
+pupil_locate_list = [['date','time','right_eye_x','right_eye_y','left_eye_x','left_eye_y']]
+gray=0
+def eye_do():
+    def is_close(y0,y1): #目が閉じているか判定する関数
+        if abs(y0 - y1) < 10:
+            return True
+        return False
+
+    def get_center(gray_img):#二値化された目画像から瞳の重心を求める
+        moments = cv2.moments(gray_img, False)
+        try:
+            
+            return int(moments['m10']/moments['m00']), int(moments['m01'] / moments['m00'])
+        except:
+            return None
+
+    def p(img, parts, eye):
+        if eye[0]:
+            cv2.circle(img, eye[0], 3, (255,255,0), -1)
+        if eye[1]:
+            cv2.circle(img, eye[1], 3, (255,255,0), -1)  
+        for i in parts:
+            cv2.circle(img, (i.x, i.y), 3, (255, 0, 0), -1)
+
+        cv2.imshow("me", img)  
+
+    def get_eye_parts(parts, left = True):# 目部分の座標を求める
+        if left:
+            eye_parts = [
+                    parts[36],
+                    min(parts[37],parts[38], key=lambda x: x.y),#parts[37].yとparts[38].yの大きいほう
+                    max(parts[40],parts[41], key=lambda x: x.y),
+                    parts[39],
+                ]
+        else:
+            eye_parts = [
+                    parts[42],
+                    min(parts[43],parts[44], key = lambda x: x.y),
+                    max(parts[46],parts[47], key=lambda x: x.y),
+                    parts[45],
+                ]
+        return eye_parts
+
+
+
+    def get_eye_image(img, parts, left = True): #カメラ画像と見つけた顔の座標から目の画像を求めて表示する
+        if left:
+            eyes = get_eye_parts(parts, True)
+        else:
+            eyes = get_eye_parts(parts, False)
+        org_x = eyes[0].x
+        org_y = eyes[1].y
+
+
+    def get_eye_center(img, parts, left=True):
+        try:
+            if left:
+                eyes = get_eye_parts(parts, True)
+            else:
+                eyes = get_eye_parts(parts, False)
+            x_center = int(eyes[0].x + (eyes[-1].x - eyes[0].x)/2)
+            y_center = int(eyes[1].y + (eyes[2].y - eyes[1].y)/2)
+            # 座標を必ず表示
+            return x_center, y_center
+        except Exception as e:
+            print(f"get_eye_center error: {e}")
+            return None
+
+    def get_pupil_location(img, parts, left=True):
+        try:
+            if left:
+                eyes = get_eye_parts(parts, True)
+            else:
+                eyes = get_eye_parts(parts, False)
+            org_x = eyes[0].x
+            org_y = eyes[1].y
+            if is_close(org_y, eyes[2].y):
+                return None
+            eye = img[org_y:eyes[2].y, org_x:eyes[-1].x]
+            gray = cv2.cvtColor(eye, cv2.COLOR_RGB2GRAY)
+            gray = cv2.GaussianBlur(gray, (5, 5), 0)
+            _, threshold_eye = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            center = get_center(threshold_eye)
+            
+            if center:
+                px, py = center[0] + org_x, center[1] + org_y
+                # 座標を必ず表示
+                return px, py
+            return None
+        except Exception as e:
+            print(f"get_pupil_location error: {e}")
+            return None
+
+    def calculate_relative_pupil_position(img,eye_center, pupil_locate, left = True): #瞳の相対座標を求める
+        if not eye_center:
+            return
+        if not pupil_locate:
+            return
+        
+        relative_pupil_x = pupil_locate[0] - eye_center[0]
+        relative_pupil_y = pupil_locate[1] - eye_center[1]
+
+        return relative_pupil_x, relative_pupil_y
+
+    def calculate_direction(img, parts, pupil_locate):#瞳の位置と目の座標から瞳が向いている方向を求めて表示する
+        if not pupil_locate:
+            return
+
+        eyes = get_eye_parts(parts, True)
+        
+        left_border = eyes[0].x + (eyes[3].x - eyes[0].x)/3 #目を左右に三等分した時の左ゾーンの境目
+        right_border = eyes[0].x  + (eyes[3].x - eyes[0].x) * 2/3 #目を左右に三等分した時の右ゾーンの境目
+        up_border = eyes[1].y + (eyes[2].y - eyes[1].y)/3 #目を上下に三等分した時の上ゾーンの境目
+        down_border = eyes[1].y + (eyes[2].y - eyes[1].y) * 2/3 #目を上下に三等分した時の下ゾーンの境目
+        
+
+
+
+
+
+
+
+    def append_pupil_locate_to_list(left_pupil_position,right_pupil_position):#現在時刻、右瞳位置、左瞳位置をlistに追加する
+        global left_pupil_x, left_pupil_y, right_pupil_x, right_pupil_y
+
+        left_pupil_x =None
+        left_pupil_y =None
+        right_pupil_x=None
+        right_pupil_y=None
+        if not left_pupil_position:
+            return
+        if not right_pupil_position:
+            return
+        locate = [left_pupil_position[0],left_pupil_position[1],right_pupil_position[0],right_pupil_position[1]]
+        
+        left_pupil_x = left_pupil_position[0]
+        left_pupil_y =left_pupil_position[1]
+        right_pupil_x=right_pupil_position[0]
+        right_pupil_y=right_pupil_position[1]
+        return
+
+
+
+
+
+
+
+
+    cap = cv2.VideoCapture(0,cv2.CAP_DSHOW)
+
+    ret, frame = cap.read() #Videoを読み込む
+    if not ret or frame is None:
+        print("カメラから映像を取得できませんでした。")
+    # ここに処理を追加していく　----
+    dets = detector(frame[:, :, ::-1])
+    if len(dets) > 0:
+        parts = predictor(frame, dets[0]).parts()
+
+        left_eye_center = get_eye_center(frame,parts, True)
+        right_eye_center = get_eye_center(frame,parts, False)
+        left_pupil_location = get_pupil_location(frame, parts, True)
+        right_pupil_location = get_pupil_location(frame, parts, False)
+        left_relative_pupil_position = calculate_relative_pupil_position(frame, left_eye_center,left_pupil_location, True)
+        right_relative_pupil_position = calculate_relative_pupil_position(frame, right_eye_center,right_pupil_location, False)
+        calculate_direction(frame,parts,left_pupil_location)
+        append_pupil_locate_to_list(left_relative_pupil_position,right_relative_pupil_position)
+
+
+
+            
+    return([left_pupil_x, left_pupil_y, right_pupil_x, right_pupil_y])
+
+
+
+
+
+
+
+ser = serial.Serial('COM3', 9600, timeout=2) #シリアルポートの設定
+
+
+def heartrate():
+    global i
+    global sensor_data
+    global ser
+    global data
+
+    i+=1
+    while len(data) < i:   
+        line = ser.readline().strip()
+        line = line.decode('utf-8', errors='ignore') 
+        data.append(line)  #dataリストに心拍数データを格納 
+    try:
+        sensor_data = float(data[-1])  #dataリストから一番新しいデータを取得
+        print(f"{sensor_data}")
+    except ValueError:
+        print("sippai")
+        sensor_data = 0
+
+
+
+
+
+
+
+# # マルチタスク
+def data_get():
+        print("◆スレッド:", threading.currentThread().getName())
+        # スレッドを作る
+
+        # スレッドの処理を開始
+        thread1 = threading.Thread(target=eye_do)
+        thread2 = threading.Thread(target=heartrate)
+        
+        thread2.start()
+        thread1.start()
+
+        # スレッドの処理を待つ
+        thread1.join()
+        thread2.join()
+
+        with open(csv_file, 'a', encoding='utf-8') as f:#あらかじめ、csv_fileとしてCSVファイルを用意
+            writer = csv.writer(f)
+            time_now = datetime.now()
+            writer.writerow([f'{sensor_data}',f'{left_pupil_x}', f'{left_pupil_y}',f'{right_pupil_x}',f'{right_pupil_y}',f'{time_now}'])
+            print(f"書き込み完了: {sensor_data}, {left_pupil_x}, {left_pupil_y}, {right_pupil_x}, {right_pupil_y}, {time_now}")
+            # sensor_data=心拍数データ
+            # left_pupil_x =左目のx座標
+            # left_pupil_y =左目のy座標
+            # right_pupil_x=右目のx座標
+            # right_pupil_y=右目のy座標
+
+ 
+
+for i in range(100):
+    data_get()
+ser.close

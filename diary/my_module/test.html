@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>背景切り替えテスト</title>
+    <style>
+        body {
+            background-image: url("{% static 'diary/ground.png' %}");
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+    </style>
+</head>
+<body>
+    <button onclick="changeBg()">背景を変える</button>
+    <script>
+        function changeBg() {
+            document.body.style.backgroundImage = "url('{% static 'diary/other_bg.png' %}')";
+        }
+    </script>
+</body>
+</html>

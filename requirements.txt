@@ -1,0 +1,11 @@
+Django
+serial
+gunicorn
+django-environ
+python-decouple
+dj_database_url
+whitenoise
+openai
+python-environ
+Groq
+google.generativeai
