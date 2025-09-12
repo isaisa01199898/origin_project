@@ -1,18 +1,19 @@
 from datetime import datetime
 import csv
-from gaze_tracking import GazeTracking
+from my_module.gaze_tracking import GazeTracking
 import cv2
 import dlib
 import threading
+import numpy as np
+import matplotlib.pyplot as plt
 import serial
-import sys
 now = datetime.now()
 time_now = now.strftime("%Y-%m-%d_%H-%M-%S")
 left_pupil_x =None
 left_pupil_y =None
 right_pupil_x=None
 right_pupil_y=None
-sensor_data=None
+sensor_data  =None
 i=3
 
 data = []
@@ -34,7 +35,9 @@ path = 'C:\\Users\\isami\\OneDrive\\Desktop\\myproject\\shape_predictor_68_face_
 predictor = dlib.shape_predictor(path)
 pupil_locate_list = [['date','time','right_eye_x','right_eye_y','left_eye_x','left_eye_y']]
 gray=0
+
 def eye_do():
+    left_pupil_x, left_pupil_y, right_pupil_x, right_pupil_y = None, None, None, None
     def is_close(y0,y1): #目が閉じているか判定する関数
         if abs(y0 - y1) < 10:
             return True
@@ -111,7 +114,7 @@ def eye_do():
             if is_close(org_y, eyes[2].y):
                 return None
             eye = img[org_y:eyes[2].y, org_x:eyes[-1].x]
-            gray = cv2.cvtColor(eye, cv2.COLOR_RGB2GRAY)
+            gray = cv2.cvtColor(eye, cv2.COLOR_BGR2GRAY)
             gray = cv2.GaussianBlur(gray, (5, 5), 0)
             _, threshold_eye = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
             center = get_center(threshold_eye)
@@ -182,10 +185,22 @@ def eye_do():
 
     cap = cv2.VideoCapture(0,cv2.CAP_DSHOW)
 
+    left_pupil_x, left_pupil_y, right_pupil_x, right_pupil_y = None, None, None, None
+
     ret, frame = cap.read() #Videoを読み込む
     if not ret or frame is None:
         print("カメラから映像を取得できませんでした。")
+    frame = cv2.resize(frame, (640, 480))
+
+    frame=frame.astype(np.float32)
     # ここに処理を追加していく　----
+    blur = cv2.blur(frame,(31,31))
+    blur= blur.astype(np.float32)
+    frame = frame*1.0/(blur+1e-6)
+    frame = cv2.normalize(frame,None,alpha=0,beta=255,norm_type=cv2.NORM_MINMAX,dtype=cv2.CV_8U)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    gray = cv2.equalizeHist(gray)
+    frame = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
     dets = detector(frame[:, :, ::-1])
     if len(dets) > 0:
         parts = predictor(frame, dets[0]).parts()
@@ -198,6 +213,7 @@ def eye_do():
         right_relative_pupil_position = calculate_relative_pupil_position(frame, right_eye_center,right_pupil_location, False)
         calculate_direction(frame,parts,left_pupil_location)
         append_pupil_locate_to_list(left_relative_pupil_position,right_relative_pupil_position)
+        cap.release()  # eye_doの最後で呼ぶ
 
 
 
@@ -205,12 +221,15 @@ def eye_do():
     return([left_pupil_x, left_pupil_y, right_pupil_x, right_pupil_y])
 
 
+# for i in range(100):
+#     cap = cv2.VideoCapture(0,cv2.CAP_DSHOW)
+#     cap.set(cv2.CAP_PROP_SETTINGS,1)
 
 
 
 
 
-ser = serial.Serial('COM3', 9600, timeout=2) #シリアルポートの設定
+ser = serial.Serial('COM3', 9600, timeout=0.1) #シリアルポートの設定
 
 
 def heartrate():
@@ -218,6 +237,7 @@ def heartrate():
     global sensor_data
     global ser
     global data
+    ser = serial.Serial('COM3', 9600, timeout=0.1) #シリアルポートの設定
 
     i+=1
     while len(data) < i:   
@@ -239,6 +259,8 @@ def heartrate():
 
 # # マルチタスク
 def data_get():
+        global ser 
+
         print("◆スレッド:", threading.currentThread().getName())
         # スレッドを作る
 
@@ -252,19 +274,9 @@ def data_get():
         # スレッドの処理を待つ
         thread1.join()
         thread2.join()
+        print(f"書き込み完了: {sensor_data}, {left_pupil_x}, {left_pupil_y}, {right_pupil_x}, {right_pupil_y}, {time_now}")
 
-        with open(csv_file, 'a', encoding='utf-8') as f:#あらかじめ、csv_fileとしてCSVファイルを用意
-            writer = csv.writer(f)
-            time_now = datetime.now()
-            writer.writerow([f'{sensor_data}',f'{left_pupil_x}', f'{left_pupil_y}',f'{right_pupil_x}',f'{right_pupil_y}',f'{time_now}'])
-            print(f"書き込み完了: {sensor_data}, {left_pupil_x}, {left_pupil_y}, {right_pupil_x}, {right_pupil_y}, {time_now}")
-            # sensor_data=心拍数データ
-            # left_pupil_x =左目のx座標
-            # left_pupil_y =左目のy座標
-            # right_pupil_x=右目のx座標
-            # right_pupil_y=右目のy座標
 
- 
 
 for i in range(100):
     data_get()

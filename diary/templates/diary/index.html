@@ -1,34 +1,240 @@
 {% extends "base.html" %}
 {% load static %}
 
+
+{% block title %}Diary{% endblock %}
+
+{% block bg_image %}
+{% if back_clor %}
+    {{ back_clor }}
+{% else %}
+    #ffffff
+{% endif %}
+
+{% if bg_image %}
+    {{ bg_image }}
+{% else %}
+    diary/images/default_bg.jpg
+{% endif %}
+{% endblock %}
 {% block content %}
-    <div class="content">
-        <h1>名言</h1>
-        <form action="{% url 'diary:index' %}" method="post">
-            {% csrf_token %}
-            <input type="hidden" name="change_bg" value="1">
-            <input type="submit" value="表示">
-        </form>
+<style>
+    html {
+    font-size: 40px;
 
-        {% if message %}
-            <audio id="myAudio" src="{% static 'diary/videoplayback.m4a' %}" loop autoplay></audio>
-            <script>
-            document.addEventListener('click', function playBGM() {
-                document.getElementById('myAudio').play();
-                document.removeEventListener('click', playBGM);
-            });
-            </script>
+    }
+    .bg_img h1,
+    .bg_img h2 {
+        text-align: center;
+        display: none; /* 最初は隠す */
+        vertical-align: middle;"
+        color: #000000ff;
+        z-index: 3;
+        font-size: 130px;
 
-            <audio id="voiceAudio" src="{% static 'diary/output.mp3' %}" autoplay style="display:none;"></audio>
-            <script>
-            const voiceAudio = document.getElementById('voiceAudio');
-            if (voiceAudio) {
-                voiceAudio.playbackRate = 1.15;
-            }
-            </script>
-            
-            <h1>{{ message }}</h1>
-            <h2>{{ message_hito }}</h2>
-        {% endif %}
+        transform: translateY(500px); /* ここで下げる量を調整 */
+        position: relative;
+    }
+    body {
+        height: 50vw;
+        background-color: #ffffffff;
+
+    }
+    
+    img {
+        height: 100vh;
+        display: block;
+        width: 20%;
+        height: 25%;
+        object-position: center center;/* 値の順番は左右 上下 */
+        position: relative;
+        object-fit: cover;
+        top: 1700px;
+        left: 1500px;
+
+    }
+    .bg_img {
+        display: none; /* 初期は非表示 */
+        width: 100vw;
+        background-image: url("{% static 'diary/handan.png' %}");
+        height:100vh;
+        background-size: 2600px 2000px;
+        background-position: center center;
+        background-repeat: no-repeat;
+
+        position: relative;
+
+        display: flex;               /* Flexboxにする */
+        flex-direction: column;      /* 縦方向 */
+        justify-content: center;     /* 縦中央 */
+        align-items: center;         /* 横中央 */
+        text-align: center;
+    }
+    .bg_img::after {
+        content: "";
+        width: 100vw;
+        height:100vh;   
+        position: absolute;
+        top:0; left:0; right:0; bottom:0;
+        background-color: rgba(255, 255, 255, 0.4);
+        pointer-events: none;
+        background-size: 400px 800px;
+        opacity: 1.0;
+        z-index: 2;
+
+    }
+    .bg_img_2 {
+        display: none; /* 最初は非表示 */
+        /* 他のスタイルはそのまま */
+        width: 50vw;
+        height: 50vh;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: left top;
+        position: relative;
+    }
+    .bg-img p {
+        font-size: 16px;
+        width: 100%;
+        line-height:150px;
+        text-align: center;
+        color: #fff;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-30deg);
+        margin: 0;
+    } 
+    .target {
+        width: 0vw;
+        height: 0vh;
+
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: left top;
+        position: relative;
+        background-color: {{back_clor}}; /* 必要なら */
+    }
+
+        
+    .target_2{
+        width: 0vw;
+        height: 0vh;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: left top;
+        position: relative;
+        background-color: {{back_clor}}; /* 必要なら */
+    }
+
+
+</style>
+{% if message%}
+    <div class="target"></div>
+
+    <div class="bg_img" style="display: none;">
+        <h1>{{message}}</h1>
+        <h2>{{ message_hito }}</h2>
+
+
+        <audio id="bgm" src="{% static 'diary/videoplayback.m4a' %}" loop></audio>
+        <audio id="voiceButton" src="{% static 'diary/button.mp3' %}" style="display:none;"></audio>
+        <audio id="voiceOut" src="{% static 'diary/out.mp3' %}" style="display:none;"></audio>
+        <audio id="voiceOutput" src="{% static 'diary/put.mp3' %}" style="display:none;"></audio>
     </div>
+
+    <script>
+    const target = document.querySelector('.target');
+    const bgImg = document.querySelector('.bg_img');
+    const voiceButton = document.getElementById('voiceButton');
+    const body = document.getElementById('body');
+
+    const voiceOut = document.getElementById('voiceOut');
+    const voiceOutput = document.getElementById('voiceOutput');
+    const bgm = document.getElementById('bgm');
+
+    // 再生スピード調整
+    [voiceButton, voiceOut, voiceOutput].forEach(audio => {
+        if (audio) audio.playbackRate = 1.15;
+    });
+
+    setTimeout(() => {
+        voiceButton.play();
+        bgImg.style.display = "block"; // ← これを追加
+        bgImg.style.backgroundColor = '#ffffffff';
+        body.style.backgroundColor = '#ffffffff'; // 背景色を設定
+        target.style.color = '#ffffffff'; // テキストの色を設定
+    }, 500);
+
+    setTimeout(() => {
+        bgImg.style.display = "block";  // 表示]
+        voiceOut.play();
+    }, 4000);
+
+    setTimeout(() => {
+        // 背景画像を変更
+        bgImg.style.backgroundSize = "cover";
+        bgImg.style.backgroundImage = "url('{% static 'diary/ground_v6.0.png' %}')";
+
+        // 音声を再生
+        voiceOutput.play();
+
+        // 名言表示
+        const h1 = document.querySelector('.bg_img h1');
+        const h2 = document.querySelector('.bg_img h2');
+        h1.style.display = "block";
+        h2.style.display = "block";
+        bgImg.style.display = "block";
+
+        // BGM再生（ユーザー操作が必要な場合の対応）
+        bgm.play();
+        document.addEventListener('click', function playBGMOnce() {
+            bgm.play();
+            document.removeEventListener('click', playBGMOnce);
+        });
+    }, 10000);  // ← ここも100000じゃなくて10秒（10000ms）に！
+
+    // STEP 5: 20秒後にリロード
+    setTimeout(() => {
+        window.location.reload();
+    }, 13500); 
+
+    </script>
+{% else %}
+    <div class="target_2"></div>
+
+    <div class="bg_img_2" style="display: none;">
+
+
+
+        <audio id="bgm" src="{% static 'diary/videoplayback.m4a' %}" loop></audio>
+        <audio id="voiceButton" src="{% static 'diary/button.mp3' %}" style="display:none;"></audio>
+        <audio id="voiceOut" src="{% static 'diary/out.mp3' %}" style="display:none;"></audio>
+        <audio id="voiceOutput" src="{% static 'diary/output.mp3' %}" style="display:none;"></audio>
+    </div>
+    <script>
+    const boxImage = "{% static box %}";
+    const target = document.querySelector('.target_2');
+    const bgImg_2 = document.querySelector('.bg_img_2');
+    const voiceButton = document.getElementById('voiceButton');
+    const voiceOut = document.getElementById('voiceOut');
+    const voiceOutput = document.getElementById('voiceOutput');
+    const bgm = document.getElementById('bgm');
+    [voiceButton, voiceOut, voiceOutput].forEach(audio => {
+        if (audio) audio.playbackRate = 1.15;
+    });
+    setTimeout(() => {
+        const bgImg_2 = document.querySelector('.bg_img_2');
+        bgImg_2.style.display = "block"; // ← これを追加
+        bgImg_2.style.backgroundImage = `url('${boxImage}')`;        
+        console.log("背景切替", bgImg_2, bgImg_2.style.backgroundImage);
+
+
+    }, 2000);
+
+    setTimeout(() => {
+        window.location.reload();
+    }, 5000); 
+    </script>
+{% endif %}
 {% endblock %}

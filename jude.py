@@ -1,15 +1,9 @@
-import cv2
-import dlib
+
 import os
-import datetime
 import csv
-import re
-import pprint
-import os
-import pandas as pd
-import numpy as np
-import time
-csv_file = 'line.csv'
+
+
+csv_file = 'C:/Users/isami/OneDrive/Desktop/myproject/data/line.csv'
 
 text=None
 left_x_box=[]
@@ -25,101 +19,70 @@ flat_list_left_y=[]
 flat_list_right_x=[]
 flat_list_right_y=[]
 
-# ファイルが存在するか確認
-if not os.path.exists(csv_file):
-    print(f"{csv_file} が存在しません。")
-    exit()
 
-# ファイルサイズが変化するまで待機
-previous_size = os.path.getsize(csv_file)
-print("CSVファイルの書き込みを待機中...")
-while True:
-    time.sleep(1)  # 1秒待機
-    current_size = os.path.getsize(csv_file)
-    if current_size > previous_size:  # サイズが変化した場合
-        print("CSVファイルに書き込みが検出されました。")
-        break
-    previous_size = current_size
 
-while True:
-    i=1
-    with open('line.csv', encoding='utf-8') as f:
-                    reader = csv.reader(f)
-                    rows = list(reader) 
-    with open('line.csv', encoding='utf-8') as f:
-        reader = csv.reader(f)
-        next(reader)  # ヘッダー行をスキップ
-        for left_x in reader:
-            del left_x[-6:]
-            left_x_box.append([int(value) for value in left_x if value])  # 数値に変換
-    
-    lis = list(filter(None, left_x_box))
-    flat_list_left_x = [item for sublist in left_x_box for item in sublist]
-    print(len(flat_list_left_x))
-    if len(flat_list_left_x) > i:
-        left_eye_x= [flat_list_left_x[i] - flat_list_left_x[i + 1] for i in range(len(flat_list_left_x) - 1)]
-    with open('line.csv', encoding='utf-8') as f:
-        reader = csv.reader(f)
-        next(reader)  # ヘッダー行をスキップ
-        for left_y in reader:
-            del left_y[-5:]
-            del left_y[:1]
-            left_y_box.append([int(value) for value in left_y if value])  # 数値に変換
-    
-    
-    lis = list(filter(None, left_y_box))
-    flat_list_left_y = [item for sublist in left_y_box for item in sublist]
-    if len(flat_list_left_y) > i:
-        left_eye_y = [flat_list_left_y[j] - flat_list_left_y[j + 1] for j in range(len(flat_list_left_y) - 1)]
-    
-    with open('line.csv', encoding='utf-8') as f:
-        reader = csv.reader(f)
-        next(reader)  # ヘッダー行をスキップ
-        for right_x in reader:
-            del right_x[-4:]
-            del right_x[:2]
-            right_x_box.append([int(value) for value in right_x if value])  # 数値に変換
-    
-    lis = list(filter(None, right_x_box))
-    flat_list_right_x = [item for sublist in right_x_box for item in sublist]
-    if len(flat_list_right_x) > i:
-        right_eye_x = [flat_list_right_x[j] - flat_list_right_x[j + 1] for j in range(len(flat_list_right_x) - 1)]
-    
-    with open('line.csv', encoding='utf-8') as f:
-        reader = csv.reader(f)
-        next(reader)  # ヘッダー行をスキップ
-        print("haireta")
-        print(reader)
-        for right_y in reader:
-            del right_y[-3:]
-            del right_y[:3]
-            print("keseta")
-            print(right_y)
-            right_y_box.append([int(value) for value in right_y if value])  # 数値に変換
-    
-    
-    lis = list(filter(None, right_y_box))
-    print(lis)
-    flat_list_right_y = [item for sublist in right_y_box for item in sublist]
-    print(len(flat_list_right_y))
-    if len(flat_list_right_y) > i:
-        print("seikou")
-        right_eye_y= [flat_list_right_y[j] - flat_list_right_y[j + 1] for j in range(len(flat_list_right_y) - 1)]
-    else:
-        print("miss")
-    print(f"left_eye_y: {left_eye_y}")
-    print(f"left_eye_x: {left_eye_x}")
-    print(f"right_eye_x: {right_eye_x}")
-    print(f"right_eye_y: {right_eye_y}")
-    if left_eye_x and left_eye_y and right_eye_x and right_eye_y is not None:
-        if (max(left_eye_y, default=0) > 5 and max(left_eye_x, default=0) > 5 and
-            max(right_eye_x, default=0) > 5 and max(right_eye_y, default=0) > 5):
-            print("×")
-            kigou="batu"
-        else:
-            print("〇")
-            kigou="maru"
-    
+
+with open(csv_file, encoding='utf-8') as f:
+    reader = csv.reader(f)
+    next(reader)  # ヘッダー行をスキップ
+    for left_x in reader:
+        del left_x[1:]
+        del left_x[-2:]
+
+        left_x_box.append([int(value) for value in left_x if value])  # 数値に変換
+
+lis = list(filter(None, left_x_box))
+flat_list_left_x = [item for sublist in left_x_box for item in sublist]
+print(f"x{flat_list_left_x}")
+
+
+
+with open(csv_file, encoding='utf-8') as f:
+    reader = csv.reader(f)
+    next(reader)  # ヘッダー行をスキップ
+    for left_y in reader:
+        del left_y[2:]
+        del left_y[-1:]
+        left_y_box.append([int(value) for value in left_y if value])  # 数値に変換
+
+
+lis = list(filter(None, left_y_box))
+flat_list_left_y = [item for sublist in left_y_box for item in sublist]
+
+
+with open(csv_file, encoding='utf-8') as f:
+    reader = csv.reader(f)
+    next(reader)  # ヘッダー行をスキップ
+    for right_x in reader:
+        del right_x[-4:]
+        del right_x[:2]
+        right_x_box.append([int(value) for value in right_x if value])  # 数値に変換
+
+lis = list(filter(None, right_x_box))
+flat_list_right_x = [item for sublist in right_x_box for item in sublist]
+
+with open(csv_file, encoding='utf-8') as f:
+    reader = csv.reader(f)
+    next(reader)  # ヘッダー行をスキップ
+
+    for right_y in reader:
+        del right_y[-3:]
+        del right_y[:3]
+
+        right_y_box.append([int(value) for value in right_y if value])  # 数値に変換
+
+
+lis = list(filter(None, right_y_box))
+print(lis)
+flat_list_right_y = [item for sublist in right_y_box for item in sublist]
+print(len(flat_list_right_y))
+
+print(f"left_eye_y: {flat_list_left_y}")
+print(f"left_eye_x: {flat_list_left_y}")
+print(f"right_eye_x: {flat_list_right_x}")
+print(f"right_eye_y: {flat_list_right_y}")
+
+
     
     
     

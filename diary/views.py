@@ -1,34 +1,79 @@
-
 import time
 from django.shortcuts import render, redirect
-from django.http import JsonResponse
 from django.views import View
-from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
+left_pupil_x = None
+left_pupil_y = None
+right_pupil_x = None
+right_pupil_y = None
+sensor_data = None
+message=None
+data_list=[]
 
-from diary.my_module import eye_object
-from diary.gaze_tracking import GazeTracking
-import diary.gaze_tracking.tracking as gt
-
+response = None
+from serpapi import GoogleSearch
+import urllib.request
+message_hito=None
 from gtts import gTTS
-
+import csv
 import time
+
+senosr_data = 80.95 
+import numpy
+# from .my_module.eye_object import data_get
+def pitagorau(a,b):
+    c2=a*a+b*b
+    c2=numpy.sqrt(c2)
+    print(c2)
+    return c2
+def handankyuu(r_x,r_y,l_x,l_y,sensor_data):
+    r_long=pitagorau(r_x,r_y)
+    l_long=pitagorau(l_x,l_y)
+    dif = r_long - l_long 
+    jude_box = "humei"
+    if 80.8 <= sensor_data <= 81.1:                 #心拍が80.8から81.1の場合
+        if all(-4 <= v <= 4 for v in [r_y, r_x, l_y, l_x]):
+            jude_box = "focus"                      #集中している
+        elif abs(dif) <= 3:                       #右と左の距離の差の雑多位置が3より小さかったら
+            jude_box = "Notfocus"               #集中できていない
+            if abs(l_x)>=5 :                      #左目のx座標が5以上なら
+                jude_box="Notfocus"                    #集中している
+                if abs(r_x) >= 7:                   #右目のX座標が７以上なら
+                    jude_box="Notfocus"             #集中できていない
+                    if abs(r_x)- abs(l_x) <= 4:     #両目のX座標が４以下なら
+                        jude_box="Notfocus"         #集中している
+    else:
+        if  -4 <= r_y and r_x and l_y and l_x <=4 : #すべての目の座標が-3から3の範囲なら
+            jude_box = "focus"                      #集中している
+        elif 5 <= abs(l_x) <= 6:                    #左目のX座標が5以下6未満
+            jude_box="focus"                        #集中している
+        elif 10 <= abs(l_x) :                       #左目のX座標が10以上なら    
+            jude_box="focus"                        #集中している
+        else:                                       #なんでもなかったら
+            jude_box="Notfocus"                     #集中できていない
+    print(jude_box)
+    return jude_box
 
 from .forms import LoginForm # 追加
 from django.contrib.auth.views import LoginView # 追加
 from django.views import generic
 import google.generativeai as genai
-import random
 from .forms import TestForm, PageForm
 from google import genai
 from google.genai import types
-from PIL import Image
-from io import BytesIO
+def handan (l_x, sensor_data):
+    if -0.15  <sensor_data <0.15 and 3 < abs(l_x) < 3  :
+        jude_box = "focus"
+        jude_box=1
+        return jude_box  
 
+    else:
+        jude_box = "Notfocus"
+        jude_box=0
 # Load environment variables
 load_dotenv()
 
-GROQ_API_KEY = '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'
+GROQ_API_KEY = 'AIzaSyAcJIYLEK3aUww4J86BazAz9mE37GibTP0'
 data = []
 #ーー変数一覧ーー#
 text=None
@@ -76,32 +121,40 @@ kigou=""#目線での判定結果
 
 
 
+import subprocess
 
+def run_program(port, filename):
+    cmd = ["mpremote", "connect", port, "run", filename]
+    subprocess.run(cmd)
 
 from django.views import generic
 from .forms import LoginForm
 from django.shortcuts import redirect # 追加
+from django.shortcuts import render
 from django.contrib.auth.views import LoginView, LogoutView # 追加
 from django.contrib.auth import get_user_model # 追加
 from django.contrib.auth.mixins import UserPassesTestMixin # 追加
 from .forms import LoginForm, SignupForm # 追加
 from django.shortcuts import redirect # 追加
-
 from django.views import generic
-
+global user
 
 '''トップページ'''
 class TopView(generic.TemplateView):
+    global user
     template_name = 'diary/top.html'
 
 '''サインアップ'''
 class Signup(generic.CreateView):
+    global user
     template_name = 'diary/user_form.html'
     form_class = SignupForm
 
     def form_valid(self, form):
+        global user
         user = form.save() # formの情報を保存
-        return redirect('diary:signup_done')
+        print(user.favorite_category)  # モデルにfavoritecategoryフィールドがあれば値が取れる
+        return redirect('diary:signup_done')    
     
     # データ送信
     def get_context_data(self, **kwargs):
@@ -112,15 +165,15 @@ class Signup(generic.CreateView):
 
 '''サインアップ完了'''
 class SignupDone(generic.TemplateView):
+    global user
     template_name = 'diary/signup_done.html'
 
-user=None
 '''自分しかアクセスできないようにするMixin(My Pageのため)'''
 class OnlyYouMixin(UserPassesTestMixin):
+
     raise_exception = True
 
     def test_func(self):
-        # 今ログインしてるユーザーのpkと、そのマイページのpkが同じなら許可
         user = self.request.user
         return user.pk == self.kwargs['pk']
     
@@ -169,61 +222,87 @@ class Login(LoginView):
 
 # --- Main view for index ---
 class IndexView(View):
+
     template_name = "C:\\Users\\isami\\OneDrive\\Desktop\\myproject\\diary\\templates\\diary\\index.html"
 
     def get(self, request):
-        # Initial render without AI message
-        context = {
-            'ser_data': ser_data,
-            **sample_values,
-            'form': TestForm(),
-            'insert_forms': '初期値',
-            'message': None,
-        }
-        return render(request, self.template_name, context)
+        user = request.user
+        if user.is_authenticated:
+            favorite = user.favorite_category
+            print(favorite)
+        else:
+            favorite = None
+        print("未ログイン")
+        print(favorite)
+        jude_box = "brain"
+        # i=0
+        # for i in range(5):
 
-    def post(self, request, *args, **kwargs):
-            message_hito = None
-            #sinpakusuuyomitori
-            # ser = serial.Serial('com3',9600)
-            # line=''
-            # i=0
-            # data=[]
-            # while len(data)<3:     #forではできない
-            #     line = ser.readline().decode('utf-8').strip()
-            #     data.append(line)
+        #     r_y,r_x,l_y,l_x,sensor_data= None, None, None, None,None
+        #     r_y_kyuu,r_x_kyuu,l_y_kyuu,l_x_kyuu,sensor_data_kyuu= None, None, None, None,None
+
+        #     r_x, r_y, l_x, l_y, sensor_data=data_get()
+
+        #     r_x_kyuu, r_y_kyuu, l_x_kyuu, l_y_kyuu, sensor_data_kyuu=data_get()
+
+        #     r_x=r_x_kyuu-r_x
+        #     r_y=r_y_kyuu-r_y
+        #     l_x=l_x_kyuu-l_x
+        #     l_y=l_y_kyuu-l_y
+        #     sensor_data=sensor_data_kyuu-sensor_data
+        #     jude_box=handan(l_x,sensor_data)
+        #     if jude_box==1:
+        #         data_list.append([jude_box])
+        #     else:
+        #         print("sippai2")
+        #     distant=len(data_list)
+        #     print(distant)
+        #     print(f"data:{data_list}")
+        #     print(distant)
 
             
-            #     print(data)
-            # ser.close()
-            # try:
-            #     sensor_data = float(data[-1])
-            #     print(f"{sensor_data}")
-            # except :
-            #     sensor_data = None
-            #     print("you lose")
-            sensor_data = 78  # Simulated sensor data for testing
-            # Simulate sensor data
-            # sensor_data,left_pupil_x,left_pupil_y,left_pupil,right_pupil_x,right_pupil_y,right_pupil,time_now = eye_object.data_get()
-            # print(sensor_data,left_pupil_x,left_pupil_y,left_pupil,right_pupil_x,right_pupil_y,right_pupil,time_now)
-            print("start")
-            sensor_data=78
-            print(f"{sensor_data}")
-            judebox = None
-            message = None
-            sensor_data=sensor_data/2
-            
-            if sensor_data is not None:
-                if 75 < sensor_data < 85:
-                    judebox = "集中できる"
+        # if distant > 3:
+        #     print(data_list)
+        #     jude_box="focus"
+        # elif 2 <= distant <3:
+        #     print(data_list)
+        #     jude_box="yayafocus"
+        # elif 0 <= distant <1:
+        #     print(data_list)
+        #     jude_box="Notfocus"
 
 
 
-            client = genai.Client(api_key="AIzaSyCcDqS18vRebeRB8t8f4s-i8kFYElq_m1I")
+    
+        print("データ取得完了")
+        print(user)
+        favorite="スポーツ"
+        jude_box="Notfocus"
+        if jude_box =="Notfocus" :
+            judebox = "集中していない"  # ← これを追加！
+            r_y,r_x,l_y,l_x= None, None, None, None
+            message="nasi"
+            message_hito="nasi"
+            client = genai.Client(api_key="AIzaSyAi541WuxVD8ZMb2YalkjCS90bjG2MspMk")
+            grounding_tool = types.Tool(
+                google_search=types.GoogleSearch()
+            )
+
+            # Configure generation settings
+            config = types.GenerateContentConfig(   
+                tools=[grounding_tool]
+            )
+
+
+
+
+
 
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
-                contents=f'勉強中に{judebox}人を励ます{liking}を日本語で一つ挙げてください。（情報はweb検索してください)',
+                contents=f'勉強中に{judebox}人を励ます{favorite}にかんする名言を日本語で一つ挙げてください。（名言のみを上げよ）（情報はweb検索してください)',
+                config=config,
+
             )
             message = response.text
             print(message)
@@ -231,7 +310,9 @@ class IndexView(View):
 
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
-                contents=f'「勉強中に{judebox}人を励ます{liking}を日本語で一つ挙げてください。」というプロンプトをべつのAIに送って帰ってきたのが{message}。これを言った人は誰ですか？（日本語で）（{message}は一言一句あってなくてもいいから、近い言葉を言った誰かの名前を挙げて）（「誰々」みたいにひとことで）',
+                contents=f'「勉強中に{judebox}人を励ます{favorite}に関する名言を日本語で一つ挙げてください。」というプロンプトをべつのAIに送って帰ってきたのが{message}。これを言った人は誰ですか？必ず一言で答えなさい（日本語で）（{message}は一言一句あってなくてもいいから、近い言葉を言った誰かの名前を挙げて）（「誰々」みたいにひとことで）',
+                config=config,
+
             )
             message_hito = response.text
             print(message_hito)
@@ -239,60 +320,103 @@ class IndexView(View):
                 # 四字熟語
             
 
+            params = {
+                "engine": "google_images",  # ← Google画像検索を指定
+                "q": message_hito,
+                "hl": "en",
+                "gl": "us",
+                "google_domain": "google.com",
+                "api_key": "ad05af9e948cb95d6f4e2cf9082e6568a9a98682cc2374e6d218848cfaf46b0f"
+            }
+
+            search = GoogleSearch(params)
+            results = search.get_dict()
+
+            images_results = results.get("images_results", [])
+
+            if images_results:
+                first_img = images_results[0]
+                first_img_url = first_img.get("original")
+                print(first_img_url)
+                if first_img_url:
+                    print(first_img_url)
+                    safe_url = first_img_url
+                    save_path = r"C:/Users/isami/OneDrive/Desktop/myproject/diary/static/diary/ground_v6.0.png"
+                    urllib.request.urlretrieve(safe_url, save_path)
+                    print("画像保存完了:", save_path)
+                else:
+                    print("eee")
+            else:
+                print("iie")
 
 
-            contents = (f"{message_hito}（横画面）")  #画像を生成するためのプロンプト
 
-            response = client.models.generate_content(
-                model="gemini-2.0-flash-preview-image-generation",  #モデルの指定
-                contents=contents,
-                config=types.GenerateContentConfig(
-                response_modalities=['TEXT', 'IMAGE']
-                )
-            )
-
-            for part in response.candidates[0].content.parts:
-                if part.text is not None:
-                    print(part.text)
-                elif part.inline_data is not None:
-                    image = Image.open(BytesIO((part.inline_data.data)))
-                    image.save('C:/Users/isami/OneDrive/Desktop/myproject/diary/static/diary/ground_v2.0.png')
-                    image.show()
-            # client = OpenAI(
-            # api_key="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"
-            # )
-
-            # completion = client.chat.completions.create(
-            # model="gpt-4o-mini",
-            # store=True,
-            # messages=[
-            #     {"role": "user", "content": f"{message}はあなたとは違うAIに、「勉強中に{judebox}人を励ます{liking}を一つだけ挙げてください。（名言・格言関係の場合は、誰が言ったのか、何時代に行ったのかもお願い。）(その言葉の説明も入れて)（簡単に、「名言」いった人  説明 の形で）（嘘をついたりせず、WEBを検索して出力して）（勉強に集中できない人を励ますように）（自分で考えずにネットで調べて）（日本語で）」とプロンプトを送ったらかえってきた文章です。間違いがあったら修正してください。日本語でお願いします。"}
-            # ]
-            # )
-            # message=completion.choices[0].message.content
 
 
             text = f"{message}"
             tts = gTTS(text=text, lang='ja')
-            tts.save("C:/Users/isami/OneDrive/Desktop/myproject/diary/static/diary/output.mp3") 
+            tts.save("C:/Users/isami/OneDrive/Desktop/myproject/diary/static/diary/put.mp3") 
             bg_image = 'diary/white.png'
-            if request.method == 'POST' and request.POST.get('change_bg') == '1':
-                bg_image = 'diary/ground_v2.0.png'
+            bg_image = 'diary/ground_v6.0.png'
+            run_program("COM6", "C:\\Users\\isami\\OneDrive\\Desktop\\myproject\\user_program.py")
 
-
+            box='diary/15.png'
             # Prepare context for rendering
             context = {
                 'ser_data': ser_data,
                 'form': TestForm(),
+                'back_clor': '#FF0000',
                 'insert_forms': '初期値',
                 'message': message,
                 'bg_image': bg_image,
                 'message_hito':message_hito,
+                'should_click':True,
+                'box':box
             }
-            time.sleep(10)
+
 
             return render(request, self.template_name, context)
+        elif jude_box=="focus":
 
+            r_y,r_x,l_y,l_x= None, None, None, None
+            bg_image = ''
+
+            box= 'diary/13.png'
+            context = {
+                'ser_data': ser_data,
+                **sample_values,
+                'form': TestForm(),
+                'insert_forms': '初期値',
+                'message': None,
+                'back_clor': '#00bf63',
+                'bg_image': '',
+                'box': box,
+            }
+            return render(request, self.template_name, context)
+
+        elif jude_box=="yayafocus":
+            r_y,r_x,l_y,l_x= None, None, None, None
+
+            box= 'diary/14.png'
+            context = {
+                'ser_data': ser_data,
+                **sample_values,
+                'form': TestForm(),
+                'back_clor': "#E0F900",
+                'insert_forms': '初期値',
+                'message': None,
+                'bg_image': '',
+                'box': box,
+            }
+            return render(request, self.template_name, context)
+
+
+
+        
+
+    def post(self, request, *args, **kwargs):
+        pass
+        
 
 # --- Page creation view ---
 class PageCreateView(View):

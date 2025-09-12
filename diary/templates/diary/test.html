@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block title %}Diary{% endblock %}
+
+{% block bg_image %}
+{% if back_clor %}
+    {{ back_clor }}
+{% else %}
+    #ffffff
+{% endif %}
+
+{% if bg_image %}
+    {{ bg_image }}
+{% else %}
+    diary/images/default_bg.jpg
+{% endif %}
+{% endblock %}
+{% block content %}
+<style>
+    html {
+    font-size: 85px;
+
+    }
+    h1 {
+    color: #ffffff;
+    }
+    h2 {
+    color: #ffffff;
+    }
+    body {
+    height: 100vw;
+    transform: rotate(90deg);
+    background-color: {{back_clor}};
+
+    }
+    
+    img {
+        display: block;
+        width: 20%;
+        height: 25%;
+        object-position: center center;/* 値の順番は左右 上下 */
+        position: relative;
+
+
+        object-fit: cover;
+        top: 1700px;
+        left: 50px;
+
+    }
+    
+    .bg_img {
+            width: 100vw;
+            height: 200vh;
+            background-image: url("{% static bg_image %}?{{ now|default:'1' }}");
+            background-size: cover; /* 画像の縦横比を維持して表示 */
+            background-repeat: no-repeat;
+            
+            {% comment %} background-attachment: fixed; {% endcomment %}
+
+            background-position: left top; /* 右上に固定 */
+            position: relative;
+        }
+
+        .bg-img p {
+            font-size: 16px;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            margin: 0;
+        } 
+        #gifContainer, #bgContainer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        #gifContainer {
+            background: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            }
+
+        #gifContainer img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            }
+
+        #bgContainer {
+            background-image: url('your_background.jpg');
+            background-size: cover;
+            background-position: center;
+            display: none;
+            }
+
+
+
+
+
+</style>
+<meta http-equiv="refresh" content="10;url={% url 'diary:index' %}">
+<div class="bg_img">
+    <div class="content px-3">
+
+<div style="background-color: {{back_clor}};">
+    <audio id="voiceAudio_buton" src="{% static 'diary/button.mp3' %}" autoplay style="display:none;"></audio>
+    <script>
+    const voiceAudio = document.getElementById('voiceAudio');
+    if (voiceAudio) {
+        voiceAudio.playbackRate = 1.15;
+    }
+    </script>
+</div>
+
+<div id="bgContainer"></div>
+
+<script>
+    setTimeout(() => {
+    document.getElementById('gifContainer').style.display = 'none';
+    document.getElementById('bgContainer').style.display = 'block';
+    }, 2000); // 3秒後
+</script>
+
+
+<div id="gifContainer">
+    <img src="ROBO.gif" alt="Loading...">
+    <audio id="voiceAudio2" src="{% static 'diary/out.mp3' %}" autoplay style="display:none;"></audio>
+    <script>
+    const voiceAudio = document.getElementById('voiceAudio');
+    if (voiceAudio) {
+        voiceAudio.playbackRate = 1.15;
+    }
+    </script>
+
+</div>
+
+<div id="bgContainer"></div>
+
+<script>
+    setTimeout(() => {
+    document.getElementById('gifContainer').style.display = 'none';
+    document.getElementById('bgContainer').style.display = 'block';
+    }, 3000); // 3秒後
+</script>
+
+
+        <h1>名言</h1>
+
+        <script>
+            setTimeout(function(){
+            window.location.reload(1);
+            }, 3000); // 5000ミリ秒 = 5秒ごとにリロード
+        </script>
+
+
+
+
+
+
+        {% if message %}
+            <audio id="myAudio" src="{% static 'diary/videoplayback.m4a' %}" loop autoplay></audio>
+            <script>
+            document.addEventListener('click', function playBGM() {
+                document.getElementById('myAudio').play();
+                document.removeEventListener('click', playBGM);
+            });
+            </script>
+
+            <audio id="voiceAudio" src="{% static 'diary/output.mp3' %}" autoplay style="display:none;"></audio>
+            <script>
+            const voiceAudio = document.getElementById('voiceAudio');
+            if (voiceAudio) {
+                voiceAudio.playbackRate = 1.15;
+            }
+            </script>
+
+            <h1>{{ message }}</h1>
+            <h2>{{ message_hito }}</h2>
+        {% endif %}
+        {% comment %} <picture>
+            <img src="{% static box %}">
+
+        </picture> {% endcomment %}
+
+    </div>
+
+</div>
+</body>
+{% endblock %}

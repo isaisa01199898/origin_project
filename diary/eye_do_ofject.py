@@ -1,5 +1,4 @@
-from diary.gaze_tracking import GazeTracking
-import diary.gaze_tracking.tracking as gt
+
 import cv2
 import dlib
 import csv
@@ -63,7 +62,6 @@ count=0
 kigou=""#目線での判定結果
 #ーー変数一覧ーー#
 def data_get(left_pupil_x,left_pupil_y,right_pupil_x,right_pupil_y,right_pupil,left_pupil,heart_data):
-
     def eye_do():
         global left_pupil_x, left_pupil_y, right_pupil_x, right_pupil_y, right_pupil, left_pupil, heart_data
         global s, b, count  # ←ここにcountを追加
@@ -150,11 +148,9 @@ def data_get(left_pupil_x,left_pupil_y,right_pupil_x,right_pupil_y,right_pupil,l
                 #     #     print("eye_tracking")
                 #     #     writer.writerow(['左目のx座標','左目のy座標','右目のx座標','右目のy座標','方向','右目の座標','左目の座標'])
                     
-            print(gt.__file__)
             # print(">>> loading GazeTracking from:", gt.__file__)
             # print(">>> available methods:", [m for m in dir(gt.GazeTracking) if not m.startswith("_")])
             
-            gaze = GazeTracking()
             webcam = cv2.VideoCapture(0)
             if not webcam.isOpened():
                 print("未接続")
@@ -171,7 +167,6 @@ def data_get(left_pupil_x,left_pupil_y,right_pupil_x,right_pupil_y,right_pupil,l
             # 顔＋瞳に十字線を描画した結果を取得
             frame = gaze.annotated_frame()
 
-            gaze = GazeTracking()
             # 0→瞬き　1→真ん中　2→右　3→左
             text = ""
                 

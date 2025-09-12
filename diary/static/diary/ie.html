@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>背景テスト</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+    .target {
+      width: 100vw;
+      height: 100vh;
+      background-color: red;
+      background-size: cover;
+      background-repeat: no-repeat;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="target"></div>
+
+  <script>
+    const target = document.querySelector('.target');
+    setTimeout(() => {
+      target.style.backgroundImage = "url('2.png')";
+    }, 2000);
+  </script>
+
+</body>
+</html>
