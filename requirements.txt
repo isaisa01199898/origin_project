@@ -11,7 +11,6 @@ httptools==0.6.4
 jsonpointer==2.1
 lxml==5.3.0
 matplotlib==3.10.0
-mkl-service==2.4.0
 oauthlib==3.3.1
 opencv-python==4.12.0.88
 polars==1.33.1
@@ -31,6 +30,8 @@ ultralytics==8.3.199
 ultralytics-thop==2.0.1
 uvicorn==0.36.0
 watchfiles==1.1.0
+Django
 wheel==0.45.1
+
 
 
