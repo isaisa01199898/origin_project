@@ -1,3 +1,4 @@
+gunicorn==21.2.0
 fastapi==0.116.2
 google_search_results==2.4.2
 httptools==0.6.4
@@ -15,6 +16,7 @@ torchvision==0.23.0
 Django
 wheel==0.45.1
 numpy==2.1.3
+
 
 
 
