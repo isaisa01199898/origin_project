@@ -16,7 +16,7 @@ torchvision==0.23.0
 Django
 wheel==0.45.1
 numpy==2.1.3
-decouple
+python-decouple
 
 
 
