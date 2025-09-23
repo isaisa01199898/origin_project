@@ -17,9 +17,11 @@ Django
 wheel==0.45.1
 numpy==2.1.3
 python-decouple
+whitenoise
 dj_database_url
 django-environ
 django_apscheduler
+
 
 
 
