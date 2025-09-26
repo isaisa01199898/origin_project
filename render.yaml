@@ -7,11 +7,10 @@ databases:
 
 services:
   - type: web
-    name: django_render
+    name: myproject
     env: python
-    region: singapore
-    buildCommand: './build.sh'
-    startCommand: 'gunicorn mysite.wsgi:application'
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "cd origin_project && gunicorn myproject.wsgi:application"
     plan: free
     branch: main
     healthCheckPath: /
