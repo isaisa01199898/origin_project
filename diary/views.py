@@ -228,10 +228,10 @@ class IndexView(View):
     def get(self, request):
         user = request.user
         if user.is_authenticated:
-            favorite = user.favorite_category
-            print(favorite)
+            favorite = getattr(user, "favorite_category", None)
         else:
             favorite = None
+
         print("未ログイン")
         print(favorite)
         jude_box = "brain"
