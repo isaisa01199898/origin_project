@@ -10,7 +10,7 @@ services:
     name: myproject
     env: python
     buildCommand: "pip install -r origin_project/requirements.txt"
-    startCommand: "gunicorn origin_project.myproject.wsgi:application"
+    startCommand: "gunicorn myproject.wsgi:application"
     plan: free
     branch: main
     healthCheckPath: /
