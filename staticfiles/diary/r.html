@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>縦書きサンプル</title>
+    <style>
+
+        body {
+            height: 100vh;
+            max-width: 800px;
+            min-width: 400px;
+            background-color: #ffffff;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            font-size: 24px;
+            writing-mode: vertical-rl; /* ← ここ追加！ */
+            margin: 0;
+        }
+
+        .sample1 {
+            width: 150px;
+            height: 150px;
+            position: absolute;
+            bottom: 800px;
+            right: 1400px;
+            writing-mode: vertical-rl;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="sample1">
+        <h1>こんにちは</h1>
+    </div>
+</body>
+</html>

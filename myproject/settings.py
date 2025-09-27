@@ -1,12 +1,12 @@
 from pathlib import Path
 import os
-import environ
+import environ as django_environ
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # environ 初期化
-env = environ.Env()
+env = django_environ.Env()
 env.read_env(os.path.join(BASE_DIR, ".env"))  # .env 読み込み
 
 # SECURITY WARNING: keep the secret key used in production secret!
